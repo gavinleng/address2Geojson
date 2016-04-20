@@ -43,6 +43,8 @@ var addressArray = dataConfig.address;
 
 var len = addressArray.length;
 
+var apiKey = {key: "YOUR_API_KEY"}; // please put your Google Maps Geocoding api key here
+
 /*******
 *	GOOGLE-API GEOCODER FOR BULK DATABASE
 *
@@ -82,7 +84,7 @@ var len = addressArray.length;
 var indexToBeginAt = 0; //starts from the beginning, unsurprisingly
 
 function doNext(listIndex, jsonArray, callback) { /* for recursively going through documents in collection*/
-		if (listIndex >= jsonArray.length - 1)
+		if (listIndex > jsonArray.length - 1)
 		{
                         callback(); // if end is reached, go to final write-up
                         return 1;
@@ -90,7 +92,7 @@ function doNext(listIndex, jsonArray, callback) { /* for recursively going throu
 
 		console.log("now doing: %s", listIndex + 1);
 
-		if (typeof jsonArray[listIndex+1].geoStatus === "undefined") { //checks whether given document was already geocoded, omits if so
+		if (typeof jsonArray[listIndex].geoStatus === "undefined") { //checks whether given document was already geocoded, omits if so
 			console.log("Doing new coordinates entry...");
 
 			if (listIndex % 10 == 0) { /*this 'updates' the json file every tenth entry*/
@@ -98,11 +100,11 @@ function doNext(listIndex, jsonArray, callback) { /* for recursively going throu
 			}
 
 			setTimeout(function() {
-						processList(listIndex+1, jsonArray, callback);
+						processList(listIndex, jsonArray, callback);
 			}, timeGap); //Timeout of 35.5s is imposed in order not to exceed limit of 2500queries/24h
 		} else {
 			console.log("Coordinates already exist for that entry, proceed to do next");
-			doNext(listIndex+1, jsonArray, callback);
+			doNext(listIndex + 1, jsonArray, callback);
 		}
 }
 
@@ -137,12 +139,15 @@ function processList(listIndex, jsonArray, callback) { /*processes a single docu
 
         jsonArray[listIndex] = singleEntry; //updating results array
 
-        doNext(listIndex, jsonArray, callback);
-    });
+        doNext(listIndex + 1, jsonArray, callback);
+    }, apiKey);
 }
 
 function appendGeolocation (jsonParsed){ /* final step, after going through all the documents*/
 	jsonArray = jsonParsed;
+
+	console.log("now doing: %s", indexToBeginAt + 1);
+	console.log("Doing new coordinates entry...");
 
 	processList(indexToBeginAt, jsonArray, function() {
 		fileOpen.jsonFileWrite (jsonArray, pathToInput);
